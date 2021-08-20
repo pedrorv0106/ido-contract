@@ -35,7 +35,6 @@ describe("MonoX IDO", function () {
     this.dai = await this.MockERC20.deploy('DAI', 'DAI', e26);
 
     this.ido.connect(this.minter).setFeeTo(this.feeTo.address)
-
     await this.yfi.transfer(this.alice.address, bigNum(10000000))
     await this.dai.transfer(this.alice.address, bigNum(10000000))
     await this.yfi.transfer(this.bob.address, bigNum(10000000))
@@ -81,6 +80,24 @@ describe("MonoX IDO", function () {
 
   it("should purchase sale token with eth", async function () {
     await this.ido.connect(this.bob).purchaseSaleTokenWithEth(1,  {value: bigNum(1000),})
+    expect(await this.yfi.balanceOf(this.bob.address)).to.equal(bigNum(10000000 + 1000))
+    await expect(this.ido.connect(this.bob).purchaseSaleToken(0, bigNum(1000000)))
+      .to.be.revertedWith("VM Exception while processing transaction: revert IDO: exceed limited amount")
+  })
+
+  it("should purchase sale token with eth (referrer)", async function () {
+    await this.ido.connect(this.bob).setReferralAddress(this.carol.address)
+    const initialBobEthAmount = smallNum((await ethers.provider.getBalance(this.bob.address)).toString())
+    const initialOwnerEthAmount = smallNum((await ethers.provider.getBalance((await this.ido.poolInfo(0)).owner)).toString())
+    const initialFeeEthAmount = smallNum((await ethers.provider.getBalance(this.feeTo.address)).toString())
+    await this.ido.connect(this.bob).purchaseSaleTokenWithEth(1,  {value: bigNum(1000),})
+    expect(initialBobEthAmount - smallNum((await ethers.provider.getBalance(this.bob.address)).toString())).to.greaterThan(1000)
+    expect(initialBobEthAmount - smallNum((await ethers.provider.getBalance(this.bob.address)).toString())).to.lessThan(1001)
+    expect(smallNum((await ethers.provider.getBalance((await this.ido.poolInfo(0)).owner)).toString()) - initialOwnerEthAmount).to.equal(980)
+    expect(smallNum((await ethers.provider.getBalance(this.feeTo.address)).toString()) - initialFeeEthAmount).to.greaterThan(9)
+    expect(smallNum((await ethers.provider.getBalance(this.feeTo.address)).toString()) - initialFeeEthAmount).to.lessThan(10)
+    expect(smallNum((await ethers.provider.getBalance(await this.ido.referralInfo(this.bob.address))).toString())).to.greaterThan(10000 + 9)
+    expect(smallNum((await ethers.provider.getBalance(await this.ido.referralInfo(this.bob.address))).toString())).to.lessThan(10000 + 10)
     expect(await this.yfi.balanceOf(this.bob.address)).to.equal(bigNum(10000000 + 1000))
     await expect(this.ido.connect(this.bob).purchaseSaleToken(0, bigNum(1000000)))
       .to.be.revertedWith("VM Exception while processing transaction: revert IDO: exceed limited amount")

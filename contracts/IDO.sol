@@ -204,6 +204,19 @@ contract IDO is Ownable {
         );
         user.purchasedAmount += saleAmount;
 
+        uint256 feeAmount = msg.value / 100;
+        uint256 referrerAmount = referralInfo[msg.sender] != address(0) ? msg.value / 100 : 0;
+        uint256 ownerAmount;
+        unchecked {
+             ownerAmount = msg.value - feeAmount - referrerAmount;
+        }
+        payable(pool.owner).transfer(ownerAmount);
+        payable(feeTo).transfer(feeAmount);
+
+        if (referralInfo[msg.sender] != address(0)) {
+            payable(referralInfo[msg.sender]).transfer(referrerAmount);
+        }
+
         IERC20(pool.saleToken).safeTransfer(msg.sender, saleAmount);
 
         emit PurchaseSaleTokenWithEth(

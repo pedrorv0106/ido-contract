@@ -223,13 +223,20 @@ contract IDO is Ownable {
         require(pool.startTime >= block.timestamp, "IDO: not launched pool");
         require(pool.expiryTime >= block.timestamp, "IDO: expired pool");
         UserInfo storage user = userInfo[_pid][msg.sender];
-        uint256 saleAmount = (msg.value * 1e18) / pool.price;
+        uint256 saleAmount;
+        if (pool.curveType == PriceCurve.DEFAULT) {
+            saleAmount = (msg.value * 1e18) / pool.price;
+        } else {
+            saleAmount = getLinearAmount(
+                msg.value, pool.curveParams[0], pool.curveParams[1], pool.offeringAmount, pool.saledAmount);
+        }
         require(
             user.purchasedAmount + saleAmount <= pool.userLimitedAmount,
             "IDO: exceed limited amount"
         );
         user.purchasedAmount += saleAmount;
-
+        pool.saledAmount += saleAmount;
+        
         uint256 feeAmount = msg.value / 100;
         uint256 referrerAmount = referralInfo[msg.sender] != address(0) ? msg.value / 100 : 0;
         uint256 ownerAmount;

@@ -25,9 +25,22 @@ contract IDO is Ownable {
         uint256 saledAmount;
         uint256 startTime;
         uint256 expiryTime;
+        PriceCurve curveType;
+        uint256[] curveParams;
+        /**
+            LINEAR:
+                [0]: initila price
+                [1]: final price
+         */
     }
 
+    enum PriceCurve {
+        DEFAULT,
+        LINEAR
+    }
+    
     PoolInfo[] public poolInfo;
+    mapping(uint256 => mapping(uint256 => uint256)) curveParams;
 
     // Info of each user that purchased tokens.
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
@@ -93,14 +106,16 @@ contract IDO is Ownable {
     }
 
     function createPool(
-        string calldata _poolName,
+        string memory _poolName,
         address _saleToken,
         address _baseToken,
         uint256 _price,
         uint256 _offeringAmount,
         uint256 _userLimitedAmount,
         uint256 _startTime,
-        uint256 _expiryTime
+        uint256 _expiryTime,
+        PriceCurve _CurveType,
+        uint256[] memory _curveParams
     ) external lock returns (uint256 _pid) {
         require(_saleToken != address(0), "IDO: zero address");
         require(_baseToken != address(0), "IDO: zero address");
@@ -125,7 +140,9 @@ contract IDO is Ownable {
                 userLimitedAmount: _userLimitedAmount,
                 saledAmount: 0,
                 startTime: _startTime,
-                expiryTime: _expiryTime
+                expiryTime: _expiryTime,
+                curveType: _CurveType,
+                curveParams: _curveParams
             })
         );
     }
@@ -140,13 +157,22 @@ contract IDO is Ownable {
         require(pool.startTime >= block.timestamp, "IDO: not launched pool");
         require(pool.expiryTime >= block.timestamp, "IDO: expired pool");
         UserInfo storage user = userInfo[_pid][msg.sender];
-        uint256 saleAmount = (_baseAmount * 1e18) / pool.price;
+        uint256 saleAmount;
+        if (pool.curveType == PriceCurve.DEFAULT) {
+            saleAmount = (_baseAmount * 1e18) / pool.price;
+        } else {
+            saleAmount = getLinearAmount(
+                _baseAmount, pool.curveParams[0], pool.curveParams[1], pool.offeringAmount, pool.saledAmount);
+        }
+        require(pool.saledAmount + saleAmount <= pool.offeringAmount, 
+            "IDO: exceed offering amount"
+        );
         require(
             user.purchasedAmount + saleAmount <= pool.userLimitedAmount,
             "IDO: exceed limited amount"
         );
         user.purchasedAmount += saleAmount;
-
+        pool.saledAmount += saleAmount;
 
         uint256 feeAmount = _baseAmount / 100;
         uint256 referrerAmount = referralInfo[msg.sender] != address(0) ? _baseAmount / 100 : 0;
@@ -240,5 +266,51 @@ contract IDO is Ownable {
             balanceIn1 - balanceIn0 == amount,
             "IDO: insufficient token amount"
         );
+    }
+
+    // tokens sold
+    // uint256 tokensSold;
+    // // tokens to be sold in total
+
+    // uint tokensToBeSold = 100000000*(10**18);    // uint ip = 5000;
+    // uint fp = 10000;
+    // final price - initial price
+    // uint256 pd = fp - ip;
+    // total supply * initial price
+    
+
+    // helper token emission functions
+    function getLinearAmount(uint256 amount, uint256 ip, uint256 fp, uint256 offeringAmount, uint256 saledAmount) public view returns (uint256){
+        // , uint256 ip, uint256 fp
+        uint256 tsip = offeringAmount * ip / 1e18;
+        uint256 pd = fp - ip;
+        uint256 a = sqrt(4 * ((tsip + pd * saledAmount / 1e18) ** 2) + amount * 8 * pd * offeringAmount / 1e18);
+        uint256 b = 2 * (tsip + pd * saledAmount / 1e18);
+        uint256 c = 2 * pd;
+
+        // get a result with
+        return round(((a - b)* 10) * 1e18 / c);
+    }
+
+    // Babylonian method
+    function sqrt(uint x) public view returns (uint y) {
+        uint z = (x + 1) / 2;
+        y = x;
+        while (z < y) {
+            y = z;
+            z = (x / z + z) / 2;
+        }
+    }
+    // Rounding function for the first decimal
+    function round(uint x) public view returns (uint y) {
+        uint z = x % 10;
+
+        if (z < 5) {
+            return x / 10;
+        }
+
+        else {
+            return (x / 10) + 1;
+        }
     }
 }

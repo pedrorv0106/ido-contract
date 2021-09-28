@@ -114,13 +114,16 @@ contract IDO is Ownable {
         uint256 _userLimitedAmount,
         uint256 _startTime,
         uint256 _expiryTime,
-        PriceCurve _CurveType,
+        PriceCurve _curveType,
         uint256[] memory _curveParams
     ) external lock returns (uint256 _pid) {
         require(_saleToken != address(0), "IDO: zero address");
         require(_baseToken != address(0), "IDO: zero address");
         require(_startTime >= block.timestamp, "IDO: wrong startTime");
         require(_expiryTime >= _startTime, "IDO: wrong endTime");
+        if (_curveType == PriceCurve.LINEAR) {
+            require(_curveParams[0] < _curveParams[1], "IDO: final price should be gt initial price");
+        }
         _transferAndCheck(
             msg.sender,
             address(this),
@@ -141,7 +144,7 @@ contract IDO is Ownable {
                 saledAmount: 0,
                 startTime: _startTime,
                 expiryTime: _expiryTime,
-                curveType: _CurveType,
+                curveType: _curveType,
                 curveParams: _curveParams
             })
         );
@@ -236,7 +239,7 @@ contract IDO is Ownable {
         );
         user.purchasedAmount += saleAmount;
         pool.saledAmount += saleAmount;
-        
+
         uint256 feeAmount = msg.value / 100;
         uint256 referrerAmount = referralInfo[msg.sender] != address(0) ? msg.value / 100 : 0;
         uint256 ownerAmount;
@@ -287,7 +290,7 @@ contract IDO is Ownable {
     
 
     // helper token emission functions
-    function getLinearAmount(uint256 amount, uint256 ip, uint256 fp, uint256 offeringAmount, uint256 saledAmount) public view returns (uint256){
+    function getLinearAmount(uint256 amount, uint256 ip, uint256 fp, uint256 offeringAmount, uint256 saledAmount) public pure returns (uint256){
         // , uint256 ip, uint256 fp
         uint256 tsip = offeringAmount * ip / 1e18;
         uint256 pd = fp - ip;
@@ -296,11 +299,12 @@ contract IDO is Ownable {
         uint256 c = 2 * pd;
 
         // get a result with
+        
         return round(((a - b)* 10) * 1e18 / c);
     }
 
     // Babylonian method
-    function sqrt(uint x) public view returns (uint y) {
+    function sqrt(uint x) public pure returns (uint y) {
         uint z = (x + 1) / 2;
         y = x;
         while (z < y) {
@@ -309,7 +313,7 @@ contract IDO is Ownable {
         }
     }
     // Rounding function for the first decimal
-    function round(uint x) public view returns (uint y) {
+    function round(uint x) public pure returns (uint y) {
         uint z = x % 10;
 
         if (z < 5) {

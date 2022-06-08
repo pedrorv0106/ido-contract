@@ -1,5 +1,5 @@
 {
-  "name": "monox-ido",
+  "name": "ido-contract",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,21 +8,21 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/qntism/monox-ido.git"
+    "url": "git+https://github.com/jack16329/ido-contract.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/qntism/monox-ido/issues"
+    "url": "https://github.com/jack16329/ido-contract/issues"
   },
-  "homepage": "https://github.com/qntism/monox-ido#readme",
+  "homepage": "https://github.com/jack16329/ido-contract#readme",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.1",
     "@nomiclabs/hardhat-etherscan": "^2.1.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@nomiclabs/hardhat-web3": "^2.0.0",
-    "@openzeppelin/contracts": "^3.4.0",
+    "@openzeppelin/contracts": "^4.1.0",
     "@openzeppelin/test-helpers": "^0.5.10",
     "chai": "^4.3.0",
     "dotenv": "^8.2.0",

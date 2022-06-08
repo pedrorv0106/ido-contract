@@ -1,16 +1,23 @@
 # ido-contracts
 
-## Install
-#### Installation
-```
-yarn
+# Development
+
+## Local environment
+
+Add INFURA_PROJECT_ID, PRIVATE_KEY, ETHERSCAN_API_KEY and MATIC_API_KEY at hardhat.config.js
+
+```sh
+yarn install
 ```
 
+## Testing
 
-## Compile
+```sh
+npx hardhat test
 ```
-yarn compile
-````
-## Test
-```
-yarn test
+
+# Price Curves
+
+## Linear Price Curve
+
+![Alt text](static/linear_price_curve1.png?raw=true "Price Curve")

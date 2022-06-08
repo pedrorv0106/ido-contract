@@ -4,7 +4,7 @@
 
 ## Local environment
 
-Add INFURA_PROJECT_ID, PRIVATE_KEY, ETHERSCAN_API_KEY and MATIC_API_KEY at hardhat.config.js
+Add INFURA_PROJECT_ID, PRIVATE_KEY and ETHERSCAN_API_KEY at hardhat.config.js
 
 ```sh
 yarn install

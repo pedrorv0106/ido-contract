@@ -18,7 +18,7 @@ const PriceCurve = {
   DEFAULT: 0,
   LINEAR: 1
 }
-describe("MonoX IDO", function () {
+describe("IDO", function () {
   before(async function () {
     [
       this.owner, 
